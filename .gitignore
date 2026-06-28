@@ -4,3 +4,4 @@ __pycache__/
 .idea/
 model.pkl
 dataset/
+model_cnn.h5
