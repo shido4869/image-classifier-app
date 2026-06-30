@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paw or Not — Cat vs Dog Classifier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F6F1E7;
+    --ink: #2B2622;
+    --clay: #C2532D;
+    --moss: #5C6B4F;
+    --gold: #D9A441;
+    --line: rgba(43, 38, 34, 0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--moss);
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(40px, 7vw, 64px);
+    line-height: 1.05;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--clay);
+  }
+
+  .sub {
+    font-size: 17px;
+    color: rgba(43,38,34,0.65);
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 1px 2px rgba(43,38,34,0.04), 0 12px 32px rgba(43,38,34,0.06);
+  }
+
+  .drop {
+    border: 2px dashed var(--line);
+    border-radius: 14px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .drop:hover, .drop.dragging {
+    border-color: var(--clay);
+    background: rgba(194, 83, 45, 0.04);
+  }
+
+  .drop input[type="file"] {
+    display: none;
+  }
+
+  .drop-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+  }
+
+  .drop-text {
+    font-size: 15px;
+    color: rgba(43,38,34,0.6);
+  }
+
+  .drop-text strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  #preview {
+    display: none;
+    margin-top: 24px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+  }
+
+  #preview img {
+    width: 100%;
+    display: block;
+    max-height: 320px;
+    object-fit: cover;
+  }
+
+  .filename {
+    font-size: 13px;
+    color: rgba(43,38,34,0.55);
+    text-align: center;
+    margin-top: 10px;
+    display: none;
+  }
+
+  button.predict-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: var(--ink);
+    color: var(--cream);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease;
+  }
+
+  button.predict-btn:hover:not(:disabled) {
+    background: var(--clay);
+  }
+
+  button.predict-btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  button.predict-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  #result {
+    margin-top: 28px;
+    display: none;
+  }
+
+  .result-card {
+    border-radius: 16px;
+    padding: 28px;
+    text-align: center;
+    border: 1px solid var(--line);
+  }
+
+  .result-card.cat { background: rgba(92, 107, 79, 0.08); }
+  .result-card.dog { background: rgba(217, 164, 65, 0.10); }
+
+  .result-emoji {
+    font-size: 40px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .result-label {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+
+  .result-conf {
+    font-size: 14px;
+    color: rgba(43,38,34,0.6);
+    margin: 0 0 18px;
+  }
+
+  .bar-track {
+    height: 8px;
+    background: rgba(43,38,34,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--clay);
+    width: 0%;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .result-card.cat .bar-fill { background: var(--moss); }
+  .result-card.dog .bar-fill { background: var(--gold); }
+
+  .error-msg {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    background: rgba(194, 83, 45, 0.08);
+    border: 1px solid rgba(194, 83, 45, 0.25);
+    color: var(--clay);
+    font-size: 14px;
+    display: none;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 13px;
+    color: rgba(43,38,34,0.4);
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(246,241,231,0.3);
+    border-top-color: var(--cream);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill, button.predict-btn, .drop { transition: none; }
+    .spinner { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Convolutional Neural Network · 83% accuracy</div>
+      <h1>Cat, or <em>dog?</em></h1>
+      <p class="sub">Upload a photo and a CNN trained on 25,000 images will make its best guess.</p>
+    </header>
+
+    <div class="card">
+      <label class="drop" id="dropZone">
+        <input type="file" id="imageInput" accept="image/*">
+        <span class="drop-icon">🐾</span>
+        <span class="drop-text"><strong>Click to upload</strong> or drag a photo here</span>
+      </label>
+
+      <div id="preview"><img id="previewImg" alt="Preview"></div>
+      <div class="filename" id="filename"></div>
+
+      <button class="predict-btn" id="predictBtn" onclick="predict()" disabled>Choose a photo first</button>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div id="result">
+        <div class="result-card" id="resultCard">
+          <span class="result-emoji" id="resultEmoji">🐾</span>
+          <p class="result-label" id="resultLabel">—</p>
+          <p class="result-conf" id="resultConf">—</p>
+          <div class="bar-track"><div class="bar-fill" id="resultBar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Built with FastAPI + TensorFlow · runs locally on port 8000</footer>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById("dropZone");
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const previewImg = document.getElementById("previewImg");
+    const filenameEl = document.getElementById("filename");
+    const predictBtn = document.getElementById("predictBtn");
+    const errorMsg = document.getElementById("errorMsg");
+    const resultBox = document.getElementById("result");
+
+    imageInput.addEventListener("change", handleFile);
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragging"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragging"));
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragging");
+      if (e.dataTransfer.files.length) {
+        imageInput.files = e.dataTransfer.files;
+        handleFile();
+      }
+    });
+
+    function handleFile() {
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      previewImg.src = url;
+      preview.style.display = "block";
+      filenameEl.textContent = file.name;
+      filenameEl.style.display = "block";
+
+      predictBtn.disabled = false;
+      predictBtn.textContent = "Predict";
+      resultBox.style.display = "none";
+      errorMsg.style.display = "none";
+    }
+
+    async function predict() {
+      const file = imageInput.files[0];
+      if (!file) return;
+
+      predictBtn.disabled = true;
+      predictBtn.innerHTML = '<span class="spinner"></span>Thinking...';
+      errorMsg.style.display = "none";
+      resultBox.style.display = "none";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/predict", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) throw new Error("Server returned an error");
+
+        const data = await response.json();
+        showResult(data);
+      } catch (err) {
+        errorMsg.textContent = "Could not reach the prediction server. Make sure app.py is running on port 8000.";
+        errorMsg.style.display = "block";
+      } finally {
+        predictBtn.disabled = false;
+        predictBtn.textContent = "Predict again";
+      }
+    }
+
+    function showResult(data) {
+      const isDog = data.label === "Dog";
+      const pct = (data.confidence * 100).toFixed(1);
+
+      const card = document.getElementById("resultCard");
+      card.className = "result-card " + (isDog ? "dog" : "cat");
+
+      document.getElementById("resultEmoji").textContent = isDog ? "🐶" : "🐱";
+      document.getElementById("resultLabel").textContent = isDog ? "It's a dog" : "It's a cat";
+      document.getElementById("resultConf").textContent = pct + "% confident";
+
+      resultBox.style.display = "block";
+      requestAnimationFrame(() => {
+        document.getElementById("resultBar").style.width = pct + "%";
+      });
+    }
+  </script>
+</body>
+</html>

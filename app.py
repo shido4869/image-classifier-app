@@ -5,6 +5,14 @@ import tensorflow as tf
 import io
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 model = tf.keras.models.load_model('model_cnn.h5')
 
 
